@@ -17,6 +17,6 @@ class Heatwave(object):
 
     # Import any methods
 
-    from heatwaves.adders import add_data
-    from heatwaves.clim import climatology
-    from heatwaves.wave import wave
+    from marineheat.adders import add_data
+    from marineheat.clim import climatology
+    from marineheat.wave import wave
