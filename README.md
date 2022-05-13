@@ -1,2 +1,2 @@
 # heatwaves
-Python code/package for heat wave analysis
+A Python package for heat wave analysis of NetCDF model output
