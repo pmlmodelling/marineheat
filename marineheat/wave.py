@@ -101,6 +101,8 @@ def wave(self, duration=5, gap=3, period=None):
     ds_thresh.is_corrupt()
     ds_end.is_corrupt()
 
+    ds_events = nc.open_data()
+
     j = -1
     for yy in range(period[0], period[1] + 1):
         yy_thresh = ds_thresh.copy()
@@ -156,6 +158,13 @@ def wave(self, duration=5, gap=3, period=None):
             ds_year.append(ds_tracker)
 
             if i == (self.ndays -1):
+                yy_events = ds_year.copy()
+                yy_events.merge("time")
+                ds_year.select(variable="hw")
+                yy_events.compare(">0")
+                yy_events.tsum()
+                yy_events.rename({"hw":"n_events"})
+                ds_events.append(yy_events)
                 ds_year.ensemble_sum()
                 ds_year.select(variable="hw")
                 ds_year.set_year(yy)
@@ -165,10 +174,16 @@ def wave(self, duration=5, gap=3, period=None):
     print("Summarizing results")
 
     all_ds.merge("time")
+    ds_events.merge("time")
 
     all_ds.rename({"hw": "days"})
-    if period is not None:
-        all_ds.select(years=range(period[0], period[1] + 1))
     all_ds.run()
 
-    self.results = all_ds.copy()
+
+    self.hwdays = all_ds.copy()
+    self.nevents = ds_events.copy()
+    #self.nevent = all_ds.copy()
+
+
+
+
