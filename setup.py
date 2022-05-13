@@ -7,14 +7,14 @@ LONG_DESCRIPTION = """
 """
 
 PROJECT_URLS = {
-    "Bug Tracker": "https://github.com/pmlmodelling/heatwaves/issues",
-    "Source Code": "https://github.com/pmlmodelling/heatwaves",
+    "Bug Tracker": "https://github.com/pmlmodelling/marineheat/issues",
+    "Source Code": "https://github.com/pmlmodelling/marineheat",
 }
 
 REQUIREMENTS = [i.strip() for i in open("requirements.txt").readlines()]
 
 
-setup(name='heatwaves',
+setup(name='marineheat',
       version='0.0.1',
       description=DESCRIPTION,
       long_description=LONG_DESCRIPTION,
@@ -30,12 +30,12 @@ setup(name='heatwaves',
     ],
 
       project_urls=PROJECT_URLS,
-      url = "https://github.com/pmlmodelling/heatwaves",
+      url = "https://github.com/pmlmodelling/marineheat",
       author='Robert Wilson',
       maintainer='Robert Wilson',
       author_email='rwi@pml.ac.uk',
 
-      packages = ["heatwaves"],
+      packages = ["marineheat"],
       setup_requires=[
         'setuptools',
         'setuptools-git',
