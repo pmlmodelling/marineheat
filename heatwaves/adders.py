@@ -17,6 +17,21 @@ def add_data(self, files=None, variable=None):
     """
 
     self.data = nc.open_data(files, checks=False)
+    self.calendar = self.data.calendar
+
+    if "360" in self.calendar:
+        self.ndays = 360
+    else:
+        self.ndays = 365
+
+    self.leap = False
+
+    if "greg" in self.calendar:
+        self.leap = True
+
+    if self.leap:
+        print("Removing 29th February from leap years to ensure daily baseline is consitent.") 
+        self.data.no_leaps()
 
     vars = self.data.variables
 

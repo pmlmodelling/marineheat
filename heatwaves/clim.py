@@ -1,3 +1,17 @@
+
+from collections import defaultdict
+
+def int2ordinal_3(num):
+    ordinal_dict = defaultdict(lambda: "th")
+    ordinal_dict.update({1: "st", 2: "nd", 3: "rd"})
+    mod = num % 10
+    if num % 100 == 11:
+        suffix = "th"
+    else:
+        suffix = ordinal_dict[mod]
+    return f"{num}{suffix}"
+
+
 def climatology(self, period=None, p=90, window=1):
     """
     Generate the historical climatology
@@ -20,10 +34,13 @@ def climatology(self, period=None, p=90, window=1):
     ds_clim.select(years=range(period[0], period[1] + 1))
     cal = ds_clim.calendar
 
+    ds_clim.run()
+    years = ds_clim.years
+    percentile = int2ordinal_3(p)
+    print(f"Baseline climatology calculated based on the years {years} using a {window} day window and the {percentile} percentile")
+
     self.calendar = cal
 
-    if ("360" not in cal) or ("365" not in cal):
-        ds_clim.drop(day=29, month=2)
     ds_clim.tpercentile(over="day", p=p)
     ds_clim.run()
 

@@ -45,11 +45,6 @@ def wave(self, duration=5, gap=3, period=None):
     if len(self.data) > 1:
         raise NotImplementedError("Only works with single file datasets currently!")
 
-    if ("360" not in self.calendar):
-        ds_thresh.cdo_command("del29feb")
-    else:
-        ds_thresh.select(timesteps = range(0, 365))
-
     ds_thresh.gt(ds_clim)
     ds_thresh.merge("time")
     ds_thresh.rename({"tos": "above"})
@@ -117,11 +112,7 @@ def wave(self, duration=5, gap=3, period=None):
 
         j += 1
         ds_year = nc.open_data()
-        for i in tqdm(range(0, 365)):
-
-            month = the_times[i - 2].month
-            day = the_times[i - 2].day
-            year = the_times[i - 2].year
+        for i in tqdm(range(0, self.ndays)):
 
             while True:
                 command = (
@@ -157,14 +148,14 @@ def wave(self, duration=5, gap=3, period=None):
                 raise ValueError("does not exist")
 
 
-            if i == 364:
+            if i == (self.ndays - 1):
                 ds_tracker.assign( hw=lambda x: x.hw + (x.tracker > duration) * (x.tracker - x.previous))
                 ds_tracker.assign(previous=lambda x: x.tracker + 1 - 1)
                 ds_tracker.run()
 
             ds_year.append(ds_tracker)
 
-            if i == 364:
+            if i == (self.ndays -1):
                 ds_year.ensemble_sum()
                 ds_year.select(variable="hw")
                 ds_year.set_year(yy)
