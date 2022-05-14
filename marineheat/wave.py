@@ -81,7 +81,11 @@ def wave(self, duration=5, gap=3, period=None):
     ds_tracker.merge("variable")
     ds_tracker.run()
 
-    ds_tracker.assign( tracker=lambda x: (x.tracker < duration) * (x.above) * x.tracker + (x.tracker > (duration - 1)) * x.tracker)
+    # tracker keeps track of the number of days above the temperature threshold
+    # a heat wave occurs when this has gone on for as long as the duration
+    # previous keeps track of how many heat wave days occured before the year, but when the heat wave is still ongoing
+    # Both tracker and previous are set to 0 at the start
+
     ds_tracker.assign(previous=lambda x: x.tracker - x.tracker + 0.0)
     ds_tracker.assign(tracker=lambda x: x.tracker - x.tracker + 0.0)
 
@@ -119,7 +123,10 @@ def wave(self, duration=5, gap=3, period=None):
             while True:
                 command = (
                     f"cdo -aexpr,'previous=previous*(tracker > 1)' "
-                    + f"-aexpr,'tracker=(hw>0)*0+(hw<1)*tracker' -aexpr,'hw=(tracker -previous) * (tracker > {duration-1})*end' -aexpr,'tracker=(tracker < {duration})*(above)*(tracker+above)+(tracker>{duration-1})*(tracker + above)' -merge -selname,tracker,previous "
+                    + f"-aexpr,'tracker=(hw>0)*0+(hw<1)*tracker' " 
+                    + f"-aexpr,'hw=(tracker -previous) * (tracker > {duration-1})*end' "
+                    + f"-aexpr,'tracker=(tracker < {duration})*(above)*(tracker+above)+(tracker>{duration-1})*(tracker + above)' "
+                    + " -merge -selname,tracker,previous "
                     + ds_tracker[0]
                     + f" -seltimestep,{i + 1} "
                     + yy_thresh[0]
@@ -151,8 +158,8 @@ def wave(self, duration=5, gap=3, period=None):
 
 
             if i == (self.ndays - 1):
-                ds_tracker.assign( hw=lambda x: x.hw + (x.tracker > duration) * (x.tracker - x.previous))
-                ds_tracker.assign(previous=lambda x: x.tracker + 1 - 1)
+                ds_tracker.assign( hw=lambda x: x.hw + (x.tracker >= duration) * (x.tracker - x.previous))
+                ds_tracker.assign(previous=lambda x: (x.tracker) * (x.tracker > duration) )
                 ds_tracker.run()
 
             ds_year.append(ds_tracker)
