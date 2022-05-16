@@ -30,7 +30,7 @@ def add_data(self, files=None, variable=None):
         self.leap = True
 
     if self.leap:
-        print("Removing 29th February from leap years to ensure daily baseline is consitent.") 
+        print("Removing 29th February from leap years to ensure daily baseline is consistent.") 
         self.data.no_leaps()
 
     vars = self.data.variables
