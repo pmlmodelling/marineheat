@@ -1,8 +1,6 @@
 import pandas as pd
 import nctoolkit as nc
 import xarray as xr
-from matchpoint.utils import get_type
-
 
 def add_data(self, files=None, variable=None):
     """
@@ -17,7 +15,10 @@ def add_data(self, files=None, variable=None):
     """
 
     self.data = nc.open_data(files, checks=False)
+    if len(self.data) > 1:
+        raise NotImplementedError("This is not yet implemented for multi-file dataset")
     self.calendar = self.data.calendar
+
 
     if "360" in self.calendar:
         self.ndays = 360
@@ -42,5 +43,9 @@ def add_data(self, files=None, variable=None):
             self.variable = vars[0]
 
     if len(vars) > 1:
-        self.data.select(variables=variable)
+        self.data.subset(variables=variable)
         self.variable = variable
+
+    self.variable = self.data.variables[0]
+
+

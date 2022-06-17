@@ -1,6 +1,7 @@
-def open_hw():
+def open_hw(parallel = False):
 
     heat = Heatwave()
+    heat.parallel = parallel
     return heat
 
 

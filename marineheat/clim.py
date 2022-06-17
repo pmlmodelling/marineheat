@@ -33,6 +33,8 @@ def climatology(self, period=None, p=90, window=1):
 
     """
 
+    nc.options(parallel = self.parallel)
+
     if type(period) is not list:
         raise ValueError("You have to provide a period for the baseline")
 
@@ -58,7 +60,7 @@ def climatology(self, period=None, p=90, window=1):
             f"Baseline climatology calculated based on the years {years} using a {window} day window and the {percentile} percentile within the window."
         )
 
-        ds.select(years=range(period[0] - 1, period[1] + 2))
+        ds.subset(years=range(period[0] - 1, period[1] + 2))
         ds.run()
 
         ds_times = ds.times
@@ -102,7 +104,7 @@ def climatology(self, period=None, p=90, window=1):
             ind_choice = [x if x > 0 else 0 for x in ind_choice]
             ind_choice = list(set(ind_choice))
 
-            ds_years.select(times=ind_choice)
+            ds_years.subset(times=ind_choice)
             ds_years.tpercentile(p)
             ds_years.set_date(year=2001, month=1, day=1)
             if i > 0:
@@ -116,7 +118,7 @@ def climatology(self, period=None, p=90, window=1):
         return None
 
     ds_clim = self.data.copy()
-    ds_clim.select(years=range(period[0], period[1] + 1))
+    ds_clim.subset(years=range(period[0], period[1] + 1))
     cal = ds_clim.calendar
 
     ds_clim.run()

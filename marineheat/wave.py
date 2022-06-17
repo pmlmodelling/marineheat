@@ -31,6 +31,9 @@ def wave(self, duration=5, gap=3, period=None):
 
     years = self.data.years
 
+    if len(period) != 2:
+        raise ValueError("Please provide the start and end of the period")
+
     if period[0] == np.min(years):
         raise ValueError(
             "Heat waves cannot be calculated for the first year in the time series"
@@ -47,7 +50,7 @@ def wave(self, duration=5, gap=3, period=None):
 
     ds_thresh.gt(ds_clim)
     ds_thresh.merge("time")
-    ds_thresh.rename({"tos": "above"})
+    ds_thresh.rename({self.variable: "above"})
     ds_thresh.assign(below=lambda x: x.above < 1)
     ds_thresh.run()
     ds_thresh.run()
@@ -55,7 +58,7 @@ def wave(self, duration=5, gap=3, period=None):
     n_times = len(ds_thresh.times)
 
     ds_end = ds_thresh.copy()
-    ds_end.select(variable="below")
+    ds_end.subset(variable="below")
     ds_end.rolling_sum(gap)
     ds_end.shift(day=1)
     ds_end.compare("> 0")
@@ -63,18 +66,18 @@ def wave(self, duration=5, gap=3, period=None):
     ds_end.run()
     ds_end.run()
 
-    ds_thresh.select(variables="above")
+    ds_thresh.subset(variables="above")
 
     print("Calculating days within gaps")
 
     ds_tracker = ds_thresh.copy()
-    ds_tracker.select(time=0)
+    ds_tracker.subset(time=0)
     ds_tracker.rename({"above": "tracker"})
-    ds_tracker.select(variables="tracker")
+    ds_tracker.subset(variables="tracker")
     ds_tracker.run()
 
     ds_day = ds_thresh.copy()
-    ds_day.select(time=1)
+    ds_day.subset(time=1)
     ds_day.run()
 
     ds_tracker.append(ds_day)
@@ -96,30 +99,45 @@ def wave(self, duration=5, gap=3, period=None):
     the_times = ds_end.times
 
     all_ds = nc.open_data()
-    ds_year = nc.open_data()
     print("Calculating heat wave occurrences for each day")
 
-    ds_thresh.select(years=range(period[0], period[1] + 1))
-    ds_end.select(years=range(period[0], period[1] + 1))
+    ds_thresh.subset(years=range(period[0], period[1] + 1))
+    ds_end.subset(years=range(period[0], period[1] + 1))
 
     ds_thresh.is_corrupt()
     ds_end.is_corrupt()
 
     ds_events = nc.open_data()
 
+    ds_thresh.run()
+    ds_end.run()
+
     j = -1
-    for yy in range(period[0], period[1] + 1):
-        yy_thresh = ds_thresh.copy()
-        yy_end = ds_end.copy()
-        yy_thresh.select(year=yy)
-        yy_end.select(year=yy)
-        yy_end.run()
-        yy_thresh.run()
+
+    n_years = period[1] - period[0] + 1
+
+    yy = period[0]
+    for j in tqdm(range(0, n_years * self.ndays)):
+    #for yy in range(period[0], period[1] + 1):
+        if j > 0:
+            if (j % self.ndays) == 0:
+                yy += 1
+
+        if (j % self.ndays) == 0:
+            yy_thresh = ds_thresh.copy()
+            yy_end = ds_end.copy()
+            yy_thresh.subset(year=yy)
+            yy_end.subset(year=yy)
+            yy_end.run()
+            yy_thresh.run()
+            ds_year = nc.open_data()
 
         j += 1
-        ds_year = nc.open_data()
-        for i in tqdm(range(0, self.ndays)):
+        #for i in tqdm(range(0, self.ndays)):
+        i = j % self.ndays
+        #for i in range(0, self.ndays):
 
+        if True:
             while True:
                 command = (
                     f"cdo -aexpr,'previous=previous*(tracker > 1)' "
@@ -134,6 +152,9 @@ def wave(self, duration=5, gap=3, period=None):
                     f"-seltimestep,{i +1} " + yy_end[0]
                 )
                 temp = nc.temp_file.temp_file("nc")
+               # nc.session.append_safe(temp)
+                ds_tracker.current = temp
+
                 command = command + " " + temp
                 out = subprocess.Popen(
                     command,
@@ -148,10 +169,12 @@ def wave(self, duration=5, gap=3, period=None):
                 if "No data arrays " in result:
                     raise ValueError(result)
 
-                break
+                if os.path.exists(temp):
+                    break
 
 
-            ds_tracker.current = temp
+            #nc.session.remove_safe(temp)
+
 
             if os.path.exists(temp) is False:
                 raise ValueError("does not exist")
@@ -159,36 +182,51 @@ def wave(self, duration=5, gap=3, period=None):
 
             if i == (self.ndays - 1):
                 ds_tracker.assign( hw=lambda x: x.hw + (x.tracker >= duration) * (x.tracker - x.previous))
+                #ds_tracker.run()
                 ds_tracker.assign(previous=lambda x: (x.tracker) * (x.tracker > duration) )
                 ds_tracker.run()
 
             ds_year.append(ds_tracker)
 
+            #if i == 0:
+            #    ds_year = ds_tracker.copy()
+            #    ds_year.subset(variable = "hw")
+            #else:
+            #    ds_year.add(ds_tracker, "hw")
+            #    ds_year.run()
+
             if i == (self.ndays -1):
-                yy_events = ds_year.copy()
-                yy_events.merge("time")
-                ds_year.select(variable="hw")
-                yy_events.compare(">0")
-                yy_events.tsum()
-                yy_events.rename({"hw":"n_events"})
-                ds_events.append(yy_events)
+                ##yy_events = ds_year.copy()
+                ##yy_events.merge("time")
+                ##yy_events.compare(">0")
+                ##yy_events.tsum()
+                ##yy_events.rename({"hw":"n_events"})
+                ##ds_events.append(yy_events)
+                #for ff in ds_year:
+                #    if os.path.exists(ff) == False:
+                #        print(ff)
+                #ds_year.nco_command("ncea -y sum -v hw", ensemble=True)
+                ds_year.subset(variable="hw")
                 ds_year.ensemble_sum()
-                ds_year.select(variable="hw")
+                #ds_year.run()
+                ##ds_year.subset(variable="hw")
                 ds_year.set_year(yy)
+                #print("here 3")
+                #ds_year.run()
+                #print("here 4")
                 all_ds.append(ds_year)
 
 
     print("Summarizing results")
 
     all_ds.merge("time")
-    ds_events.merge("time")
 
     all_ds.rename({"hw": "days"})
     all_ds.run()
 
 
     self.hwdays = all_ds.copy()
-    self.nevents = ds_events.copy()
+    #self.nevents = ds_events.copy()
     #self.nevent = all_ds.copy()
 
 
