@@ -44,6 +44,8 @@ def wave(self, duration=5, gap=3, period=None):
 
     ds_thresh = self.data.copy()
     ds_thresh.split("year")
+    ds_thresh.zip()
+    ds_thresh.run()
 
     if len(self.data) > 1:
         raise NotImplementedError("Only works with single file datasets currently!")
@@ -53,6 +55,7 @@ def wave(self, duration=5, gap=3, period=None):
     ds_thresh.rename({self.variable: "above"})
     ds_thresh.assign(below=lambda x: x.above < 1)
     ds_thresh.run()
+    ds_thresh.zip()
     ds_thresh.run()
 
     n_times = len(ds_thresh.times)
@@ -64,6 +67,7 @@ def wave(self, duration=5, gap=3, period=None):
     ds_end.compare("> 0")
     ds_end.rename({"below": "end"})
     ds_end.run()
+    ds_end.zip()
     ds_end.run()
 
     ds_thresh.subset(variables="above")
@@ -140,7 +144,7 @@ def wave(self, duration=5, gap=3, period=None):
         if True:
             while True:
                 command = (
-                    f"cdo -aexpr,'previous=previous*(tracker > 1)' "
+                    f"cdo -z zip -aexpr,'previous=previous*(tracker > 1)' "
                     + f"-aexpr,'tracker=(hw>0)*0+(hw<1)*tracker' " 
                     + f"-aexpr,'hw=(tracker -previous) * (tracker > {duration-1})*end' "
                     + f"-aexpr,'tracker=(tracker < {duration})*(above)*(tracker+above)+(tracker>{duration-1})*(tracker + above)' "
