@@ -27,7 +27,7 @@ def add_data(self, files=None, variable=None):
 
     self.leap = False
 
-    if "greg" in self.calendar:
+    if "greg" in self.calendar or "standard" in self.calendar:
         self.leap = True
 
     if self.leap:
