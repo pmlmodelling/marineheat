@@ -102,8 +102,8 @@ def climatology(self, period=None, p=90, window=1):
                 ind_choice += the_j
 
             ind_choice = [x if x > 0 else 0 for x in ind_choice]
-            ind_choice = list(set(ind_choice))
-
+            # sort ind_choice
+            ind_choice.sort()
             ds_years.subset(times=ind_choice)
             ds_years.tpercentile(p)
             ds_years.set_date(year=2001, month=1, day=1)
@@ -113,6 +113,7 @@ def climatology(self, period=None, p=90, window=1):
             ds_threshold.append(ds_years)
         ds_threshold.merge("time")
         ds_threshold.run()
+
 
         self.baseline = ds_threshold.copy()
         return None
@@ -133,5 +134,10 @@ def climatology(self, period=None, p=90, window=1):
 
     ds_clim.tpercentile(over="day", p=p)
     ds_clim.run()
+    ds_clim.zip()
+    ds_clim.run()
+    del ds_threshold
+    del ds
+    nc.cleanup()
 
     self.baseline = ds_clim.copy()
